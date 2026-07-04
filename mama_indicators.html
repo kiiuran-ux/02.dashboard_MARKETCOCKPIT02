@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NISA COCKPIT — Ake Ver.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #484f58;
+    --accent: #58a6ff;
+    --accent2: #1f6feb;
+    --green: #3fb950;
+    --green-bg: rgba(63,185,80,0.1);
+    --yellow: #d29922;
+    --yellow-bg: rgba(210,153,34,0.1);
+    --orange: #db6d28;
+    --orange-bg: rgba(219,109,40,0.1);
+    --red: #f85149;
+    --red-bg: rgba(248,81,73,0.1);
+    --purple: #bc8cff;
+    --purple-bg: rgba(188,140,255,0.1);
+    --blue-bg: rgba(88,166,255,0.1);
+    --mono: 'DM Mono', monospace;
+    --sans: 'Noto Sans JP', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 40px 0;
+    font-size: 13px;
+  }
+
+  /* ヘッダー */
+  .header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent2), var(--purple));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .header-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .header-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .last-updated { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+  .total-badge {
+    background: var(--blue-bg);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 700;
+    font-family: var(--mono);
+    cursor: pointer;
+  }
+
+  /* 介入警戒バナー（非表示デフォルト） */
+  .warning-banner {
+    background: rgba(248,81,73,0.15);
+    border-bottom: 1px solid var(--red);
+    padding: 8px 24px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--red);
+    font-weight: 700;
+    display: none;
+    animation: alertPulse 2s infinite;
+  }
+  @keyframes alertPulse { 0%,100%{opacity:1} 50%{opacity:0.65} }
+
+  .container { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+
+  /* セクションタイトル */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* カウントダウン */
+  .countdown-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .countdown-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .countdown-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .countdown-card.green::before { background: var(--green); }
+  .countdown-card.yellow::before { background: var(--yellow); }
+  .countdown-card.orange::before { background: var(--orange); }
+  .countdown-card.red::before { background: var(--red); }
+  .countdown-card.purple::before { background: var(--purple); }
+
+  .cd-label { font-size: 11px; color: var(--text2); margin-bottom: 8px; }
+  .cd-days {
+    font-family: var(--mono);
+    font-size: 32px;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .cd-days.green { color: var(--green); }
+  .cd-days.yellow { color: var(--yellow); }
+  .cd-days.orange { color: var(--orange); }
+  .cd-days.red { color: var(--red); }
+  .cd-days.purple { color: var(--purple); }
+
+  .cd-date { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  .cd-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 8px;
+    font-weight: 700;
+  }
+  .cd-badge.warn { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange); }
+  .cd-badge.alert { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+  .cd-badge.info { background: var(--blue-bg); color: var(--accent); border: 1px solid var(--accent); }
+
+  /* 確認ルーティン */
+  .routine-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .routine-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .routine-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .routine-freq {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--blue-bg);
+    color: var(--accent);
+    border: 1px solid rgba(88,166,255,0.3);
+  }
+  .routine-freq.weekly { background: var(--purple-bg); color: var(--purple); border-color: rgba(188,140,255,0.3); }
+  .routine-freq.monthly { background: var(--yellow-bg); color: var(--yellow); border-color: rgba(210,153,34,0.3); }
+  .routine-title { font-size: 12px; font-weight: 700; }
+
+  .indicator-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--bg3);
+  }
+  .indicator-row:last-child { border-bottom: none; }
+  .ind-name { color: var(--text2); font-size: 12px; }
+  .ind-value {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    text-align: right;
+  }
+  .ind-value.up { color: var(--green); }
+  .ind-value.down { color: var(--red); }
+  .ind-change { font-size: 10px; margin-left: 4px; opacity: 0.75; }
+
+  /* ポートフォリオカード */
+  .portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .portfolio-grid.two { grid-template-columns: repeat(2, 1fr); }
+
+  .portfolio-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 12px 16px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title-group { display: flex; align-items: center; gap: 8px; }
+  .card-icon { font-size: 16px; }
+  .card-name { font-size: 12px; font-weight: 700; }
+  .card-account { font-size: 10px; color: var(--text2); margin-top: 2px; }
+  .status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 10px;
+  }
+  .status-badge.hold { background: var(--green-bg); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .status-badge.accumulate { background: var(--blue-bg); color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }
+  .status-badge.sell-plan { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(210,153,34,0.3); }
+  .status-badge.deadline { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+
+  .card-body { padding: 12px 16px; }
+
+  .pf-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--bg3);
+    font-size: 12px;
+  }
+  .pf-row:last-child { border-bottom: none; }
+  .pf-label { color: var(--text2); }
+  .pf-val { font-family: var(--mono); font-weight: 500; }
+  .pf-val.positive { color: var(--green); }
+  .pf-val.negative { color: var(--red); }
+  .pf-val.neutral { color: var(--text); }
+
+  .indicators-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .ind-label-sm { font-size: 10px; color: var(--text3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .ind-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .ind-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .ind-tag.primary { background: var(--blue-bg); color: var(--accent); border-color: rgba(88,166,255,0.3); }
+
+  /* メモセクション */
+  .memo-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .memo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .memo-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+  .memo-time { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+  .memo-time.fresh  { color: var(--green); }
+  .memo-time.recent { color: var(--yellow); }
+  .memo-time.old    { color: var(--text3); }
+
+  .memo-view {
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.7;
+    background: var(--bg);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 8px 10px;
+    width: 100%;
+    min-height: 40px;
+    cursor: text;
+    word-break: break-word;
+    white-space: pre-wrap;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .memo-view:hover { border-color: var(--border); background: rgba(255,255,255,0.02); }
+  .memo-view.empty { color: var(--text3); font-style: italic; }
+
+  .memo-input {
+    display: none;
+    width: 100%;
+    font-size: 11px;
+    color: var(--text);
+    background: var(--bg3);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 8px 10px;
+    outline: none;
+    font-family: var(--sans);
+    resize: vertical;
+    min-height: 40px;
+  }
+
+  /* memo-wrap インラインバリアント（boj-rate用） */
+  .memo-wrap[data-inline] { display: inline-flex; align-items: center; justify-content: flex-end; flex: 1; }
+  .memo-wrap[data-inline] .memo-view {
+    min-height: unset;
+    width: auto;
+    padding: 0 2px;
+    background: transparent;
+    border-color: transparent;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .memo-wrap[data-inline] .memo-view:hover { background: transparent; border-color: var(--border); border-radius: 3px; }
+  .memo-wrap[data-inline] .memo-view.empty { color: var(--yellow); font-style: normal; }
+  .memo-wrap[data-inline] .memo-input {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg3);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 2px 6px;
+    outline: none;
+    width: 160px;
+    min-height: unset;
+    resize: none;
+  }
+
+  /* memo-wrap バッジバリアント（total-badge用） */
+  .total-badge { display: flex; align-items: center; gap: 4px; }
+  .memo-wrap[data-badge] { display: inline-flex; align-items: center; }
+  .memo-wrap[data-badge] .memo-view {
+    min-height: unset;
+    width: auto;
+    padding: 0;
+    background: transparent;
+    border: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    cursor: text;
+    white-space: nowrap;
+  }
+  .memo-wrap[data-badge] .memo-view:hover { background: transparent; }
+  .memo-wrap[data-badge] .memo-view.empty { color: var(--text2); font-style: normal; }
+  .memo-wrap[data-badge] .memo-input {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--bg3);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 2px 6px;
+    outline: none;
+    width: 140px;
+    min-height: unset;
+    resize: none;
+  }
+
+  /* 警告ストライプ（旧NISAデッドライン） */
+  .deadline-stripe {
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(248,81,73,0.05) 4px,
+      rgba(248,81,73,0.05) 8px
+    );
+    border-color: rgba(248,81,73,0.4) !important;
+  }
+  .deadline-stripe .card-header { background: rgba(248,81,73,0.08); }
+
+  /* スクロールバー */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ツールチップ */
+  .tip-wrap { position: relative; display: inline-flex; align-items: center; }
+  .tip-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: rgba(100,116,139,0.18); color: #4a5568;
+    font-size: 10px; font-weight: bold; cursor: pointer;
+    margin-left: 4px; flex-shrink: 0; user-select: none;
+  }
+  .tip-icon:hover, .tip-icon.active { background: rgba(88,166,255,0.25); color: var(--accent); }
+  .tip-box {
+    display: none; position: fixed; z-index: 9999; width: 250px;
+    background: #0a0e17; border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 12px; font-size: 12px; line-height: 1.6;
+    color: var(--text2); pointer-events: none; white-space: pre-wrap;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.55);
+  }
+  .tip-icon.active + .tip-box, .tip-wrap:hover .tip-box { display: block; }
+
+  /* 移行スケジュール トグル */
+  .schedule-toggle-wrap {
+    text-align: center;
+    padding: 24px 0 8px;
+  }
+  .schedule-toggle-btn {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text2);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 24px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .schedule-toggle-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--blue-bg);
+  }
+
+  /* 移行スケジュール パネル */
+  .schedule-panel {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.45s ease;
+  }
+  .schedule-panel.open { max-height: 4000px; }
+  .schedule-inner { padding: 20px 24px 40px; max-width: 1400px; margin: 0 auto; }
+
+  /* 原資カード */
+  .source-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .source-card {
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid;
+  }
+  .source-card.red   { background: var(--red-bg);    border-color: rgba(248,81,73,0.35); }
+  .source-card.blue  { background: var(--blue-bg);   border-color: rgba(88,166,255,0.35); }
+  .source-card.green { background: var(--green-bg);  border-color: rgba(63,185,80,0.35); }
+  .source-card-title { font-size: 11px; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.05em; }
+  .source-card.red   .source-card-title { color: var(--red); }
+  .source-card.blue  .source-card-title { color: var(--accent); }
+  .source-card.green .source-card-title { color: var(--green); }
+  .source-card-amount {
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .source-card-detail { font-size: 11px; color: var(--text2); line-height: 1.7; }
+
+  /* スケジュールテーブル */
+  .schedule-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 24px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 800px;
+  }
+  .schedule-table th {
+    background: var(--bg3);
+    color: var(--text2);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .schedule-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--bg3);
+    color: var(--text2);
+    vertical-align: top;
+    line-height: 1.65;
+  }
+  .schedule-table tr:last-child td { border-bottom: none; }
+  .schedule-table td:first-child {
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .schedule-table tr.done-row td {
+    background: rgba(63,185,80,0.07);
+    color: var(--text);
+  }
+  .schedule-table tr.done-row td:first-child { color: var(--green); }
+  .sch-amount {
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .sch-note { font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .sch-check { color: var(--green); }
+
+  /* 完成形カード */
+  .completion-card {
+    background: linear-gradient(135deg, var(--bg2) 0%, #1a1f2e 100%);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+  }
+  .completion-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 14px 0;
+  }
+  .completion-item {
+    background: var(--bg3);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .completion-item-label { font-size: 10px; color: var(--text3); margin-bottom: 4px; }
+  .completion-item-val {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .completion-item-val.positive { color: var(--green); }
+  .completion-item-val.zero     { color: var(--accent); }
+  .completion-total {
+    background: rgba(63,185,80,0.1);
+    border: 1px solid rgba(63,185,80,0.35);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+  }
+  .completion-total-label { font-size: 12px; color: var(--green); font-weight: 700; }
+  .completion-total-val {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--green);
+  }
+  .completion-tip {
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--text2);
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 8px 12px;
+    line-height: 1.7;
+  }
+  /* カウントダウン動的カード追加スタイル */
+  .countdown-card.task   { border-color: var(--purple); }
+  .countdown-card.market { border-color: var(--yellow); }
+  .countdown-card.task::before   { background: var(--purple); }
+  .countdown-card.market::before { background: var(--yellow); }
+  .countdown-card .cd-event { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .countdown-card .cd-unit  { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .countdown-card .cd-badge-dyn {
+    display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px;
+    margin-top: 8px; background: var(--blue-bg); color: var(--accent);
+    border: 1px solid rgba(88,166,255,0.3);
+  }
+  .countdown-card.task   .cd-badge-dyn { background: var(--purple-bg); color: var(--purple); border-color: rgba(188,140,255,0.3); }
+  .countdown-card.market .cd-badge-dyn { background: var(--yellow-bg); color: var(--yellow); border-color: rgba(210,153,34,0.3); }
+
+  /* section-title-row */
+  .section-title-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .section-title-row .section-title { margin-bottom: 0; }
+  .all-events-btn {
+    font-size: 11px; padding: 3px 10px; border-radius: 6px;
+    background: var(--blue-bg); border: 1px solid rgba(88,166,255,0.25);
+    color: var(--accent); cursor: pointer; white-space: nowrap;
+  }
+  .all-events-btn:hover { background: rgba(88,166,255,0.2); }
+
+  /* 全予定モーダル */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 9000;
+    background: rgba(1,4,9,0.8); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 24px 28px; width: 540px; max-width: 92vw;
+    max-height: 80vh; overflow-y: auto; position: relative;
+  }
+  .modal-card::-webkit-scrollbar { width: 6px; }
+  .modal-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .modal-title {
+    font-size: 14px; font-weight: 700; color: var(--text2);
+    letter-spacing: 0.05em; margin-bottom: 16px; padding-left: 8px;
+    border-left: 3px solid var(--accent);
+  }
+  .modal-close {
+    position: absolute; top: 14px; right: 16px;
+    background: none; border: none; color: var(--text2);
+    font-size: 18px; cursor: pointer; padding: 4px 8px;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-event-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .modal-event-row:last-child { border-bottom: none; }
+  .modal-event-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .modal-event-dot.task   { background: var(--purple); }
+  .modal-event-dot.market { background: var(--yellow); }
+  .modal-event-label { flex: 1; color: var(--text); }
+  .modal-event-date  { color: var(--text2); font-family: var(--mono); font-size: 11px; }
+  .modal-event-days  { min-width: 52px; text-align: right; font-family: var(--mono); font-size: 12px; }
+  .modal-event-days.urgent { color: var(--red); }
+  .modal-event-days.soon   { color: var(--orange); }
+  .modal-event-days.future { color: var(--accent); }
+  .modal-event-badge {
+    font-size: 10px; padding: 2px 7px; border-radius: 8px;
+    background: var(--blue-bg); color: var(--text2); white-space: nowrap;
+    border: 1px solid rgba(88,166,255,0.2);
+  }
+  .modal-event-row.task .modal-event-badge { background: var(--purple-bg); color: var(--purple); border-color: rgba(188,140,255,0.3); }
+
+  /* 月次発表予定 */
+  .monthly-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px;
+  }
+  .monthly-item {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 12px;
+  }
+  .monthly-item .mi-label { color: var(--text); font-weight: 500; margin-bottom: 4px; }
+  .monthly-item .mi-date  { color: var(--text2); font-size: 11px; }
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon" style="background:none;padding:0;overflow:hidden;">
+      <img src="ake_avatar.jpeg" alt="Ake"
+           style="width:36px;height:36px;object-fit:cover;border-radius:10px;">
+    </div>
+    <div>
+      <div class="header-title">NISA COCKPIT <span style="color:var(--text2);font-size:13px;font-weight:400;">— Ake Ver.</span></div>
+      <div class="header-sub">SBI証券 ／ 新NISA移行管理</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="last-updated" id="last-updated">Last updated: --</div>
+    <div class="total-badge" id="total-badge" title="クリックして編集">総評価額&nbsp;<div class="memo-wrap" data-key="mama_total" data-badge="1"></div></div>
+  </div>
+</div>
+
+<!-- 介入警戒バナー -->
+<div class="warning-banner" id="warning-banner">
+  ⚠️ ドル円 160円突破 — 為替介入警戒！政府・日銀の動向に注意
+</div>
+
+<div class="container">
+
+  <!-- カウントダウン -->
+  <div class="section-title-row">
+    <div class="section-title">⏱ 重要イベント カウントダウン</div>
+    <button class="all-events-btn" onclick="openAllEventsModal()">📋 全予定を見る</button>
+  </div>
+  <div class="countdown-grid" id="countdown-grid"></div>
+
+  <!-- 全予定モーダル -->
+  <div class="modal-overlay" id="all-events-modal" onclick="closeAllEventsModal(event)">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeAllEventsModalDirect()">✕</button>
+      <div class="modal-title">📋 今後の予定一覧</div>
+      <div id="all-events-list"></div>
+    </div>
+  </div>
+
+  <!-- 月次発表予定 -->
+  <div class="section-title">📅 次回発表予定</div>
+  <div class="monthly-grid" id="monthly-grid"></div>
+
+  <!-- 確認ルーティン -->
+  <div class="section-title">📋 確認ルーティン</div>
+  <div class="routine-grid">
+
+    <!-- 毎朝確認 -->
+    <div class="routine-card">
+      <div class="routine-header">
+        <span class="routine-freq">毎朝 3分</span>
+        <span class="routine-title">マーケット速報</span>
+      </div>
+      <div class="indicator-row">
+        <span class="ind-name">ドル円レート</span>
+        <span class="ind-value" id="lv-usdjpy">---</span>
+      </div>
+      <div class="indicator-row">
+        <span class="ind-name">S&amp;P500</span>
+        <span class="ind-value" id="lv-sp500">---</span>
+      </div>
+      <div class="indicator-row">
+        <span class="ind-name">ナスダック</span>
+        <span class="ind-value" id="lv-ixic">---</span>
+      </div>
+      <div class="indicator-row">
+        <span class="ind-name">日経先物（CME）</span>
+        <span class="ind-value" id="lv-n225">---</span>
+      </div>
+    </div>
+
+    <!-- 週次確認 -->
+    <div class="routine-card">
+      <div class="routine-header">
+        <span class="routine-freq weekly">週1回</span>
+        <span class="routine-title">マクロ環境</span>
+      </div>
+      <div class="indicator-row">
+        <span class="ind-name">日本長期金利</span>
+        <span class="ind-value" id="lv-jgb">---</span>
+      </div>
+      <div class="indicator-row">
+        <span class="ind-name">米10年債利回り</span>
+        <span class="ind-value" id="lv-tnx">---</span>
+      </div>
+      <div class="indicator-row">
+        <span class="ind-name">VIX（恐怖指数）</span>
+        <span class="ind-value" id="lv-vix">---</span>
+      </div>
+      <div class="indicator-row">
+        <span class="ind-name">日銀政策金利</span>
+        <div class="memo-wrap" data-key="mama_boj_rate" data-inline="1"></div>
+      </div>
+    </div>
+
+    <!-- 月次確認 -->
+    <div class="routine-card">
+      <div class="routine-header">
+        <span class="routine-freq monthly">月次</span>
+        <span class="routine-title">経済指標</span>
+      </div>
+      <div class="indicator-row" style="flex-wrap:wrap;">
+        <span class="ind-name">米CPI</span>
+        <div class="memo-wrap" data-key="mama_monthly_cpi"></div>
+      </div>
+      <div class="indicator-row" style="flex-wrap:wrap;">
+        <span class="ind-name">米PCE</span>
+        <div class="memo-wrap" data-key="mama_monthly_pce"></div>
+      </div>
+      <div class="indicator-row" style="flex-wrap:wrap;">
+        <span class="ind-name">米雇用統計</span>
+        <div class="memo-wrap" data-key="mama_monthly_koyo"></div>
+      </div>
+      <div class="indicator-row" style="flex-wrap:wrap;">
+        <span class="ind-name">FOMC・日銀結果</span>
+        <div class="memo-wrap" data-key="mama_monthly_fomc"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 新NISA 保有銘柄 -->
+  <div class="section-title">💰 新NISA 保有銘柄</div>
+  <div class="portfolio-grid">
+
+    <!-- S&P500 成長枠 -->
+    <div class="portfolio-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <span class="card-icon">🇺🇸</span>
+          <div>
+            <div class="card-name">eMAXIS Slim S&amp;P500</div>
+            <div class="card-account">新NISA 成長投資枠</div>
+          </div>
+        </div>
+        <span class="status-badge hold">長期保有</span>
+      </div>
+      <div class="card-body">
+        <div class="pf-row">
+          <span class="pf-label">取得金額</span>
+          <span class="pf-val neutral">¥2,400,000</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">評価額</span>
+          <span class="pf-val neutral" data-val="sp500_hyoka">¥2,436,442</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">評価損益</span>
+          <span class="pf-val positive" data-val="sp500_son">+¥36,442（+1.52%）</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">購入日</span>
+          <span class="pf-val neutral">2026/05/22</span>
+        </div>
+        <div class="indicators-section">
+          <div class="ind-label-sm">確認指標</div>
+          <div class="ind-tags">
+            <span class="ind-tag primary">S&amp;P500</span>
+            <span class="ind-tag primary">ドル円</span>
+            <span class="ind-tag">FRB政策金利</span>
+            <span class="ind-tag">米国GDP</span>
+          </div>
+        </div>
+        <div class="memo-section">
+          <div class="memo-header">
+            <span class="memo-label">📝 メモ</span>
+            <span class="memo-time" id="memo-time-mama_sp500">--</span>
+          </div>
+          <div class="memo-wrap" data-key="mama_sp500"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- オルカン つみたて枠 -->
+    <div class="portfolio-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <span class="card-icon">🌏</span>
+          <div>
+            <div class="card-name">eMAXIS Slim オルカン</div>
+            <div class="card-account">新NISA つみたて投資枠</div>
+          </div>
+        </div>
+        <span class="status-badge accumulate">積立中</span>
+      </div>
+      <div class="card-body">
+        <div class="pf-row">
+          <span class="pf-label">積立設定</span>
+          <span class="pf-val neutral">月10万円・銀行引落</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">開始日</span>
+          <span class="pf-val neutral">2026年6月〜</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">2026年積立予定</span>
+          <span class="pf-val neutral">¥700,000（7ヶ月）</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">年間上限</span>
+          <span class="pf-val neutral">¥1,200,000（月10万上限）</span>
+        </div>
+        <div class="indicators-section">
+          <div class="ind-label-sm">確認指標</div>
+          <div class="ind-tags">
+            <span class="ind-tag primary">S&amp;P500</span>
+            <span class="ind-tag primary">ドル円</span>
+            <span class="ind-tag">全世界株式</span>
+          </div>
+        </div>
+        <div class="memo-section">
+          <div class="memo-header">
+            <span class="memo-label">📝 メモ</span>
+            <span class="memo-time" id="memo-time-mama_orcan_nisa">--</span>
+          </div>
+          <div class="memo-wrap" data-key="mama_orcan_nisa"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 特定口座 -->
+    <div class="portfolio-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <span class="card-icon">📊</span>
+          <div>
+            <div class="card-name">先進国株式 ／ ニッセイ外国株式インデックスファンド</div>
+            <div class="card-account">特定口座（源泉徴収あり）</div>
+          </div>
+        </div>
+        <span class="status-badge sell-plan">売却計画中</span>
+      </div>
+      <div class="card-body">
+        <div class="pf-row">
+          <span class="pf-label">先進国株式（残り）</span>
+          <span class="pf-val positive" data-val="senshin_hyoka">¥1,945,989（+¥1,048,798）</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">ニッセイ外国株式インデックスファンド</span>
+          <span class="pf-val positive" data-val="nissei_hyoka">¥4,391,269（+¥2,391,269）</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">特定口座合計</span>
+          <span class="pf-val positive" data-val="tokutei_total">¥6,337,258（+¥3,440,067）</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">税負担見込み</span>
+          <span class="pf-val negative" data-val="tokutei_zei">約−¥699,000</span>
+        </div>
+        <div class="indicators-section">
+          <div class="ind-label-sm">売却スケジュール</div>
+          <div class="ind-tags">
+            <span class="ind-tag primary">先進国：2027年〜</span>
+            <span class="ind-tag primary">ニッセイ：2028〜2030年</span>
+            <span class="ind-tag">年240万ベース</span>
+          </div>
+        </div>
+        <div class="memo-section">
+          <div class="memo-header">
+            <span class="memo-label">📝 メモ</span>
+            <span class="memo-time" id="memo-time-mama_tokutei">--</span>
+          </div>
+          <div class="memo-wrap" data-key="mama_tokutei"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 旧NISA 期限管理 -->
+  <div class="section-title">⚠️ 旧NISA 期限管理</div>
+  <div class="portfolio-grid two">
+
+    <!-- 旧NISA 先進国株式 2026年末 -->
+    <div class="portfolio-card deadline-stripe">
+      <div class="card-header">
+        <div class="card-title-group">
+          <span class="card-icon">⏰</span>
+          <div>
+            <div class="card-name">先進国株式（除く日本）</div>
+            <div class="card-account">旧NISA ／ 2022年購入 ／ 非課税期限：2026年末</div>
+          </div>
+        </div>
+        <span class="status-badge deadline">期限管理中</span>
+      </div>
+      <div class="card-body">
+        <div class="pf-row">
+          <span class="pf-label">取得金額</span>
+          <span class="pf-val neutral">¥1,200,000</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">評価額</span>
+          <span class="pf-val neutral" data-val="oldnisa_senshin_hyoka">¥2,635,525</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">含み益（非課税）</span>
+          <span class="pf-val positive" data-val="oldnisa_senshin_son">+¥1,435,525（+119.6%）</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">非課税期限</span>
+          <span class="pf-val negative">🔴 2026年12月末</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">売却予定</span>
+          <span class="pf-val neutral">2026年12月中旬</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">売却後の用途</span>
+          <span class="pf-val neutral">2027年 成長枠 240万の原資</span>
+        </div>
+        <div class="memo-section">
+          <div class="memo-header">
+            <span class="memo-label">📝 メモ</span>
+            <span class="memo-time" id="memo-time-mama_oldnisa_senshin">--</span>
+          </div>
+          <div class="memo-wrap" data-key="mama_oldnisa_senshin"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 旧NISA オルカン 2027年末 -->
+    <div class="portfolio-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <span class="card-icon">🌐</span>
+          <div>
+            <div class="card-name">全世界株式（オルカン）</div>
+            <div class="card-account">旧NISA ／ 2023年購入 ／ 非課税期限：2027年末</div>
+          </div>
+        </div>
+        <span class="status-badge sell-plan">2027年末期限</span>
+      </div>
+      <div class="card-body">
+        <div class="pf-row">
+          <span class="pf-label">取得金額</span>
+          <span class="pf-val neutral">¥1,200,000</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">評価額</span>
+          <span class="pf-val neutral" data-val="oldnisa_orcan_hyoka">¥2,204,372</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">含み益（非課税）</span>
+          <span class="pf-val positive" data-val="oldnisa_orcan_son">+¥1,004,372（+83.7%）</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">非課税期限</span>
+          <span class="pf-val" style="color:var(--yellow);">🟡 2027年12月末</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">売却予定</span>
+          <span class="pf-val neutral">2027年12月中旬</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">売却後の用途</span>
+          <span class="pf-val neutral">2028年 成長枠 240万の原資</span>
+        </div>
+        <div class="memo-section">
+          <div class="memo-header">
+            <span class="memo-label">📝 メモ</span>
+            <span class="memo-time" id="memo-time-mama_oldnisa_orcan">--</span>
+          </div>
+          <div class="memo-wrap" data-key="mama_oldnisa_orcan"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- 移行スケジュール トグル -->
+<div class="schedule-toggle-wrap">
+  <button class="schedule-toggle-btn" id="schedule-toggle-btn">📊 移行スケジュールを見る</button>
+</div>
+
+<div class="schedule-panel" id="schedule-panel">
+  <div class="schedule-inner">
+
+    <!-- セクション① 原資の構造 -->
+    <div class="section-title">💴 原資の構造</div>
+    <div class="source-grid">
+      <div class="source-card red">
+        <div class="source-card-title">成長枠の原資（投資信託売却）</div>
+        <div class="source-card-amount">約1,053万円</div>
+        <div class="source-card-detail">
+          特定口座 手取り約566万<br>
+          ＋ 旧NISA 487万（非課税）
+        </div>
+      </div>
+      <div class="source-card blue">
+        <div class="source-card-title">つみたて枠の原資（現金・銀行引落）</div>
+        <div class="source-card-amount">約550万円</div>
+        <div class="source-card-detail">
+          2026年：月10万×7ヶ月＝70万<br>
+          2027〜2030年：月10万×48ヶ月＝480万
+        </div>
+      </div>
+      <div class="source-card green">
+        <div class="source-card-title">奥様現金（生活費別途確保済み）</div>
+        <div class="source-card-amount">約700万円</div>
+        <div class="source-card-detail">
+          つみたて枠550万を充当後<br>
+          残り約150万
+        </div>
+      </div>
+    </div>
+
+    <!-- セクション② 年次スケジュール -->
+    <div class="section-title">📅 年次投資スケジュール</div>
+    <div class="schedule-table-wrap">
+      <table class="schedule-table">
+        <thead>
+          <tr>
+            <th>年</th>
+            <th>成長枠の原資（投資信託売却）</th>
+            <th>つみたて枠の原資（現金）</th>
+            <th>新NISA購入</th>
+            <th>年間 ／ 累計</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>2026年</td>
+            <td>
+              特定口座：バランス全額（174万）＋先進国一部（約83万）税引後約240万 <span class="sch-check">✅完了</span>
+              <div class="sch-note">12月：旧NISA先進国株式売却（265万〜・非課税）→2027年へ</div>
+            </td>
+            <td>月10万×7ヶ月＝<span class="sch-amount">70万円</span> <span class="sch-check">✅設定済</span></td>
+            <td>
+              成長枠 S&amp;P500：<span class="sch-amount">240万</span> <span class="sch-check">✅</span><br>
+              つみたて オルカン：<span class="sch-amount">70万</span>
+            </td>
+            <td><span class="sch-amount">310万</span><br><span class="sch-note">累計 310万</span></td>
+          </tr>
+          <tr>
+            <td>2027年</td>
+            <td>
+              旧NISA先進国株式 265万〜（非課税）残り約25万→翌年へ
+              <div class="sch-note">12月：旧NISAオルカン売却（222万〜・非課税）→2028年へ</div>
+            </td>
+            <td>月10万×12ヶ月＝<span class="sch-amount">120万円</span></td>
+            <td>
+              成長枠 S&amp;P500：<span class="sch-amount">240万</span><br>
+              つみたて オルカン：<span class="sch-amount">120万</span>
+            </td>
+            <td><span class="sch-amount">360万</span><br><span class="sch-note">累計 670万</span></td>
+          </tr>
+          <tr>
+            <td>2028年</td>
+            <td>旧NISAオルカン 222万〜 ＋ 旧NISA残り約25万 ＋ 特定口座先進国一部（不足分ほぼなし）</td>
+            <td>月10万×12ヶ月＝<span class="sch-amount">120万円</span></td>
+            <td>
+              成長枠 S&amp;P500：<span class="sch-amount">240万</span><br>
+              つみたて オルカン：<span class="sch-amount">120万</span>
+            </td>
+            <td><span class="sch-amount">360万</span><br><span class="sch-note">累計 1,030万</span></td>
+          </tr>
+          <tr>
+            <td>2029年</td>
+            <td>先進国株式残り ＋ ニッセイ一部（手取り約240万）</td>
+            <td>月10万×12ヶ月＝<span class="sch-amount">120万円</span></td>
+            <td>
+              成長枠 S&amp;P500：<span class="sch-amount">240万</span><br>
+              つみたて オルカン：<span class="sch-amount">120万</span>
+            </td>
+            <td><span class="sch-amount">360万</span><br><span class="sch-note">累計 1,390万</span></td>
+          </tr>
+          <tr>
+            <td>2030年</td>
+            <td>ニッセイ外国株式（残り）（手取り約240万）</td>
+            <td>月10万×12ヶ月＝<span class="sch-amount">120万円</span></td>
+            <td>
+              成長枠 S&amp;P500：<span class="sch-amount">240万</span><br>
+              つみたて オルカン：<span class="sch-amount">120万</span>
+            </td>
+            <td><span class="sch-amount">360万</span><br><span class="sch-note">累計 1,750万</span></td>
+          </tr>
+          <tr class="done-row">
+            <td>2031年 ✅</td>
+            <td>—</td>
+            <td>—</td>
+            <td>残り50万を購入（成長枠）</td>
+            <td><span class="sch-amount" style="color:var(--green);">50万</span><br><span class="sch-note" style="color:var(--green);">累計 1,800万 ✅</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- セクション③ 5年後の完成形 -->
+    <div class="section-title">🏁 5年後の完成形</div>
+    <div class="completion-card">
+      <div class="completion-grid">
+        <div class="completion-item">
+          <div class="completion-item-label">旧NISA 先進国株式（2022年分）</div>
+          <div class="completion-item-val positive">2026年12月売却 → 2027年新NISAへ</div>
+          <div class="sch-note" style="margin-top:4px;">評価265万〜（非課税）</div>
+        </div>
+        <div class="completion-item">
+          <div class="completion-item-label">旧NISA オルカン（2023年分）</div>
+          <div class="completion-item-val positive">2027年12月売却 → 2028年新NISAへ</div>
+          <div class="sch-note" style="margin-top:4px;">評価222万〜（非課税）</div>
+        </div>
+        <div class="completion-item">
+          <div class="completion-item-label">特定口座</div>
+          <div class="completion-item-val zero">0円（移行完了予定）</div>
+        </div>
+        <div class="completion-item">
+          <div class="completion-item-label">新NISA つみたて枠（オルカン）</div>
+          <div class="completion-item-val">累計 約570万円</div>
+        </div>
+        <div class="completion-item">
+          <div class="completion-item-label">新NISA 成長枠（S&amp;P500）</div>
+          <div class="completion-item-val">累計 約1,200万円</div>
+        </div>
+        <div class="completion-item">
+          <div class="completion-item-label">将来の税負担</div>
+          <div class="completion-item-val zero">0円（予定）</div>
+        </div>
+      </div>
+      <div class="completion-total">
+        <span class="completion-total-label">新NISA 合計（生涯枠満額）</span>
+        <span class="completion-total-val">1,800万円</span>
+      </div>
+      <div class="completion-tip">
+        💡 旧NISA活用ポイント：先進国株式(2026年末)・オルカン(2027年末)を期限ギリギリまで非課税で成長させ、合計487万円を順次新NISAへ。
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var MEMO_API = '/api/memos_mama';
+  var memosCache = {};
+
+  // ── プロキシ ──────────────────────────────
+  var PROXIES = [
+    function(url) { return 'https://corsproxy.io/?url=' + encodeURIComponent(url); },
+    function(url) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url); },
+    function(url) { return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url); },
+  ];
+
+  var yfUrl = function(sym) {
+    return 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?interval=1d&range=1d';
+  };
+
+  var stooqUrl = function(sym) {
+    return 'https://stooq.com/q/l/?s=' + encodeURIComponent(sym) + '&f=sd2t2ohlcv&e=csv';
+  };
+
+  function fetchWithTimeout(url, ms) {
+    return new Promise(function(resolve, reject) {
+      var t = setTimeout(function() { reject(new Error('timeout')); }, ms);
+      fetch(url).then(function(r) { clearTimeout(t); resolve(r); }).catch(function(e) { clearTimeout(t); reject(e); });
+    });
+  }
+
+  async function tryFetchYahoo(proxyUrl) {
+    var res = await fetchWithTimeout(proxyUrl, 8000);
+    if (!res.ok) throw new Error('http ' + res.status);
+    var json = await res.json();
+    var meta  = json.chart.result[0].meta;
+    var price = meta.regularMarketPrice;
+    var open  = meta.regularMarketOpen || meta.chartPreviousClose || price;
+    if (isNaN(price)) throw new Error('parse');
+    return { price: price, open: open };
+  }
+
+  async function tryFetchStooq(proxyUrl) {
+    var res = await fetchWithTimeout(proxyUrl, 8000);
+    if (!res.ok) throw new Error('http ' + res.status);
+    var text = await res.text();
+    var cols = text.trim().split('\n')[0].split(',');
+    var price = parseFloat(cols[6]);
+    var open  = parseFloat(cols[3]);
+    if (isNaN(price)) throw new Error('parse');
+    return { price: price, open: open };
+  }
+
+  async function fetchSymbol(cfg) {
+    // localhost プロキシ経由（サーバーサイドキャッシュ＋フォールバック）
+    if (cfg.local) {
+      var localUrl = 'http://localhost:8765/api/price?sym=' + encodeURIComponent(cfg.stooq)
+                   + (cfg.yf ? '&yf=' + encodeURIComponent(cfg.yf) : '');
+      try {
+        var res = await fetchWithTimeout(localUrl, 25000);
+        if (res.ok) {
+          var data = await res.json();
+          if (data.price !== undefined) return { price: data.price, open: data.open };
+        }
+      } catch(_) {}
+      return null;
+    }
+    // レガシーパス（local:true でないシンボル）
+    if (cfg.stooq) {
+      var target = stooqUrl(cfg.stooq);
+      for (var i = 0; i < PROXIES.length; i++) {
+        try { return await tryFetchStooq(PROXIES[i](target)); } catch(_) {}
+      }
+      return null;
+    }
+    var target2 = yfUrl(cfg.sym);
+    for (var j = 0; j < PROXIES.length; j++) {
+      try { return await tryFetchYahoo(PROXIES[j](target2)); } catch(_) {}
+    }
+    return null;
+  }
+
+  // シンボル定義
+  var SYMBOLS = [
+    { id: 'lv-usdjpy', stooq: 'usdjpy',   yf: 'USDJPY=X', local: true, fmt: function(v) { return v.toFixed(2) + ' 円'; }, alertKey: 'usdjpy' },
+    { id: 'lv-sp500',  stooq: '^spx',     yf: '^GSPC',    local: true, fmt: function(v) { return v.toLocaleString('en-US', {maximumFractionDigits:2}); } },
+    { id: 'lv-ixic',   stooq: '^ixic',    yf: '^IXIC',    local: true, fmt: function(v) { return v.toLocaleString('en-US', {maximumFractionDigits:2}); } },
+    { id: 'lv-n225',   stooq: '^nkx',     yf: 'NIY=F',    local: true, fmt: function(v) { return v.toLocaleString('ja-JP', {maximumFractionDigits:0}); } },
+    { id: 'lv-tnx',    stooq: 'tnx',      yf: '^TNX',     local: true, fmt: function(v) { return v.toFixed(3) + '%'; } },
+    { id: 'lv-vix',    stooq: '^vix',     yf: '^VIX',     local: true, fmt: function(v) { return v.toFixed(2); } },
+    { id: 'lv-jgb',    stooq: '10yjpy.b', yf: '^TNX',     local: true, fmt: function(v) { return v.toFixed(3) + '%'; } },
+  ];
+
+  var latestValues = {};
+
+  function fmtChg(diff, pct) {
+    var sign = diff >= 0 ? '+' : '';
+    var absDiff = Math.abs(diff);
+    var ds = absDiff >= 100 ? absDiff.toFixed(1) : absDiff >= 1 ? absDiff.toFixed(2) : absDiff.toFixed(4);
+    return sign + (diff >= 0 ? '' : '-') + ds + ' (' + (diff >= 0 ? '+' : '') + pct.toFixed(2) + '%)';
+  }
+
+  function renderValue(el, price, open, fmtFn) {
+    var diff = price - open;
+    var pct  = open !== 0 ? (diff / open) * 100 : 0;
+    var dir  = diff > 0 ? 'up' : diff < 0 ? 'down' : '';
+    el.className = 'ind-value' + (dir ? ' ' + dir : '');
+    el.innerHTML = fmtFn(price) + '<span class="ind-change">' + fmtChg(diff, pct) + '</span>';
+  }
+
+  var okCount = 0, doneCount = 0;
+  var totalCount = SYMBOLS.length;
+
+  function onDone() {
+    doneCount++;
+    if (doneCount >= totalCount) {
+      var now = new Date();
+      var ts = now.toLocaleString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+      document.getElementById('last-updated').textContent = 'Last updated: ' + ts;
+      checkWarning();
+    }
+  }
+
+  function fetchAll() {
+    okCount = 0; doneCount = 0;
+    SYMBOLS.forEach(function(cfg) {
+      var el = document.getElementById(cfg.id);
+      if (!el) { onDone(); return; }
+      fetchSymbol(cfg).then(function(r) {
+        if (r) {
+          if (cfg.alertKey) latestValues[cfg.alertKey] = r.price;
+          renderValue(el, r.price, r.open, cfg.fmt);
+          okCount++;
+        } else {
+          el.textContent = 'N/A';
+          el.className = 'ind-value';
+        }
+        onDone();
+      }).catch(function() {
+        el.textContent = 'N/A';
+        el.className = 'ind-value';
+        onDone();
+      });
+    });
+  }
+  window.fetchAll                  = fetchAll;
+  window.openAllEventsModal        = openAllEventsModal;
+  window.closeAllEventsModal       = closeAllEventsModal;
+  window.closeAllEventsModalDirect = closeAllEventsModalDirect;
+
+  // ── 介入警戒バナー ─────────────────────────
+  function checkWarning() {
+    var usd = latestValues['usdjpy'];
+    var banner = document.getElementById('warning-banner');
+    if (!banner) return;
+    banner.style.display = (usd !== undefined && usd >= 160.0) ? 'block' : 'none';
+  }
+
+  // ── カウントダウン イベントマスタ ────────────
+  var countdownEvents = [
+    // 🟣 task（投資判断系）
+    { category: 'task', label: '旧NISA先進国株式 中間レビュー', date: '2026-09-15', badge: '騰落進行度を確認' },
+    { category: 'task', label: '旧NISA先進国株式 売却期限',     date: '2026-12-15', badge: '12月中旬に売却' },
+    { category: 'task', label: '旧NISAオルカン 中間レビュー',   date: '2027-09-15', badge: '騰落進行度を確認' },
+    { category: 'task', label: '旧NISAオルカン 売却期限',       date: '2027-12-15', badge: '2027年12月に売却' },
+    // 🟡 market（直近FOMC・日銀のみ＋SQ）
+    { category: 'market', label: '日銀金融政策決定会合', date: '2026-06-15', badge: '1.0%利上げ濃厚' },
+    { category: 'market', label: 'FOMC',               date: '2026-06-16', badge: '利下げ確定視' },
+    { category: 'market', label: '9月 先物SQ',          date: '2026-09-11', badge: '第2金曜' },
+    { category: 'market', label: '12月 先物SQ',         date: '2026-12-11', badge: '第2金曜' },
+  ];
+
+  var monthlyIndicators = [
+    { label: '米雇用統計', nextDate: '次回7月第1金曜' },
+    { label: '米CPI',     nextDate: '次回7月中旬' },
+    { label: '米PCE',     nextDate: '次回6月下旬' },
+    { label: '米PPI',     nextDate: '次回7月中旬' },
+  ];
+
+  function calcDays(targetDateStr) {
+    var now = new Date();
+    var jstNow = new Date(now.getTime() + (9 * 60 + now.getTimezoneOffset()) * 60000);
+    var todayStr = jstNow.getFullYear() + '-'
+      + String(jstNow.getMonth() + 1).padStart(2, '0') + '-'
+      + String(jstNow.getDate()).padStart(2, '0');
+    var todayMidnight = new Date(todayStr + 'T00:00:00+09:00');
+    var target = new Date(targetDateStr + 'T00:00:00+09:00');
+    return Math.round((target - todayMidnight) / 86400000);
+  }
+
+  function getEmojiMama(label) {
+    if (label.indexOf('日銀') >= 0) return '🏦';
+    if (label.indexOf('FOMC') >= 0) return '🦅';
+    if (label.indexOf('NISA') >= 0) return '📌';
+    return '📅';
+  }
+
+  function updateCountdowns() {
+    var grid = document.getElementById('countdown-grid');
+    if (!grid) return;
+
+    var withDays = countdownEvents.map(function(ev) {
+      var d = new Date(ev.date + 'T00:00:00+09:00');
+      var days = calcDays(ev.date);
+      return { ev: ev, d: d, days: days };
+    });
+
+    var visible = withDays.filter(function(x) { return x.days >= -1; });
+
+    var taskSorted = visible.filter(function(x) { return x.ev.category === 'task'; })
+      .sort(function(a, b) { return a.days - b.days; });
+    var nearestTask = taskSorted[0] || null;
+
+    var marketSorted = visible.filter(function(x) { return x.ev.category === 'market'; })
+      .sort(function(a, b) { return a.days - b.days; });
+
+    var result = nearestTask ? [nearestTask] : [];
+    result = result.concat(marketSorted).slice(0, 4);
+
+    if (result.length < 4) {
+      var used = {};
+      result.forEach(function(x) { used[x.ev.date + x.ev.label] = true; });
+      taskSorted.forEach(function(x) {
+        if (result.length >= 4) return;
+        if (!used[x.ev.date + x.ev.label]) result.push(x);
+      });
+    }
+
+    result.sort(function(a, b) { return a.days - b.days; });
+
+    grid.innerHTML = result.map(function(x) {
+      var ev = x.ev, days = x.days;
+      var dateStr = x.d.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      var daysClass, unitText, cardColor;
+      if (days > 7)       { daysClass = 'cd-days yellow'; unitText = '日後'; cardColor = ''; }
+      else if (days > 0)  { daysClass = 'cd-days orange'; unitText = '日後'; cardColor = ' urgent'; }
+      else if (days === 0){ daysClass = 'cd-days red';    unitText = '本日開催'; cardColor = ' urgent'; }
+      else                { daysClass = 'cd-days orange'; unitText = '経過中'; cardColor = ''; }
+      var daysText = days > 0 ? String(days) : days === 0 ? '0' : '経過';
+      var badgeHtml = ev.badge ? '<div class="cd-badge-dyn">' + ev.badge + '</div>' : '';
+      return '<div class="countdown-card ' + ev.category + cardColor + '">'
+           + '<div class="cd-event">' + getEmojiMama(ev.label) + ' ' + ev.label + '</div>'
+           + '<div class="' + daysClass + '">' + daysText + '</div>'
+           + '<div class="cd-date">' + dateStr + '</div>'
+           + '<div class="cd-unit">' + unitText + '</div>'
+           + badgeHtml + '</div>';
+    }).join('');
+  }
+
+  function renderMonthlyIndicators() {
+    var grid = document.getElementById('monthly-grid');
+    if (!grid) return;
+    grid.innerHTML = monthlyIndicators.map(function(item) {
+      return '<div class="monthly-item">'
+           + '<div class="mi-label">' + item.label + '</div>'
+           + '<div class="mi-date">' + item.nextDate + '</div>'
+           + '</div>';
+    }).join('');
+  }
+
+  function openAllEventsModal() {
+    var list = countdownEvents
+      .map(function(ev) {
+        var d = new Date(ev.date + 'T00:00:00+09:00');
+        return { ev: ev, d: d, days: calcDays(ev.date) };
+      })
+      .filter(function(x) { return x.days >= -1; })
+      .sort(function(a, b) { return a.days - b.days; });
+
+    var html = list.map(function(x) {
+      var ev = x.ev, days = x.days;
+      var dateStr = x.d.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      var daysLabel, daysClass;
+      if (days > 7)       { daysLabel = days + '日後'; daysClass = 'future'; }
+      else if (days > 0)  { daysLabel = days + '日後'; daysClass = 'soon'; }
+      else if (days === 0){ daysLabel = '本日';        daysClass = 'urgent'; }
+      else                { daysLabel = '経過中';      daysClass = 'soon'; }
+      var badgeHtml = ev.badge
+        ? '<span class="modal-event-badge">' + ev.badge + '</span>' : '';
+      return '<div class="modal-event-row ' + ev.category + '">'
+           + '<div class="modal-event-dot ' + ev.category + '"></div>'
+           + '<div class="modal-event-label">' + getEmojiMama(ev.label) + ' ' + ev.label + '</div>'
+           + '<div class="modal-event-date">' + dateStr + '</div>'
+           + '<div class="modal-event-days ' + daysClass + '">' + daysLabel + '</div>'
+           + badgeHtml + '</div>';
+    }).join('');
+
+    document.getElementById('all-events-list').innerHTML = html || '<div style="color:var(--text2);font-size:13px;">表示する予定はありません</div>';
+    document.getElementById('all-events-modal').classList.add('open');
+  }
+
+  function closeAllEventsModal(e) {
+    if (e.target === document.getElementById('all-events-modal')) {
+      document.getElementById('all-events-modal').classList.remove('open');
+    }
+  }
+
+  function closeAllEventsModalDirect() {
+    document.getElementById('all-events-modal').classList.remove('open');
+  }
+
+  // ── メモシステム ──────────────────────────
+  var TS_PREFIX = 'memo_ts_';
+
+  function tsKey(key) { return TS_PREFIX + key; }
+
+  function fmtTimestamp(iso) {
+    var d = new Date(iso);
+    var m = d.getMonth() + 1;
+    var day = d.getDate();
+    var h = String(d.getHours()).padStart(2, '0');
+    var min = String(d.getMinutes()).padStart(2, '0');
+    return m + '/' + day + ' ' + h + ':' + min;
+  }
+
+  function ageClass(iso) {
+    var hours = (Date.now() - new Date(iso).getTime()) / 3600000;
+    if (hours < 24)  return 'fresh';
+    if (hours < 168) return 'recent';
+    return 'old';
+  }
+
+  function updateTimeEl(key) {
+    var el = document.getElementById('memo-time-' + key);
+    if (!el) return;
+    var iso = memosCache[tsKey(key)];
+    if (!iso) { el.textContent = '--'; el.className = 'memo-time'; return; }
+    el.textContent = fmtTimestamp(iso);
+    el.className = 'memo-time ' + ageClass(iso);
+  }
+
+  // デバウンスされた保存
+  var saveTimer = null;
+  function persistMemos() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function() {
+      fetch(MEMO_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(memosCache)
+      }).catch(function() {});
+    }, 300);
+  }
+
+  function buildMemoWidget(container, key, opts) {
+    opts = opts || {};
+    var fallback = opts.fallback || 'メモを入力...';
+    var useInput = opts.useInput || false;  // true: <input> 1行, false: <textarea>
+    var saved = memosCache[key] || '';
+
+    var view = document.createElement('div');
+    view.className = saved ? 'memo-view' : 'memo-view empty';
+    view.textContent = saved || fallback;
+
+    var input = useInput
+      ? document.createElement('input')
+      : document.createElement('textarea');
+    input.className = 'memo-input';
+    input.value = saved;
+    input.placeholder = fallback;
+    if (!useInput) input.rows = 2;
+
+    view.addEventListener('click', function() {
+      view.style.display = 'none';
+      input.style.display = 'block';
+      input.focus();
+      if (useInput) input.select();
+    });
+
+    function commit() {
+      var val = input.value.trim();
+      var now = new Date().toISOString();
+      memosCache[key] = val;
+      if (val) {
+        memosCache[tsKey(key)] = now;
+      } else {
+        memosCache[tsKey(key)] = '';
+      }
+      view.textContent = val || fallback;
+      view.className   = val ? 'memo-view' : 'memo-view empty';
+      input.style.display = 'none';
+      view.style.display  = '';
+      updateTimeEl(key);
+      persistMemos();
+    }
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && useInput) { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { input.value = memosCache[key] || ''; input.blur(); }
+    });
+
+    container.appendChild(view);
+    container.appendChild(input);
+  }
+
+  function initMemos() {
+    document.querySelectorAll('.memo-wrap[data-key]').forEach(function(wrap) {
+      var key = wrap.dataset.key;
+      var opts = {};
+      if ('inline' in wrap.dataset) {
+        opts.useInput = true;
+        opts.fallback = '⚠️ 要確認（クリックして更新）';
+      } else if ('badge' in wrap.dataset) {
+        opts.useInput = true;
+        opts.fallback = '¥--';
+      }
+      buildMemoWidget(wrap, key, opts);
+      updateTimeEl(key);
+    });
+  }
+
+  // サーバーからメモ読み込み
+  function loadMemosFromServer(cb) {
+    fetch(MEMO_API)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        memosCache = data || {};
+        cb();
+      })
+      .catch(function() { cb(); });
+  }
+
+  // 1分ごとにタイムスタンプ更新
+  function refreshAllTimestamps() {
+    document.querySelectorAll('.memo-wrap[data-key]').forEach(function(wrap) {
+      updateTimeEl(wrap.dataset.key);
+    });
+  }
+
+  // ── ツールチップ ──────────────────────────
+  var TIPS = {
+    'ドル円レート':
+      '外国株ファンドの円換算に直結。円高になるほど評価額が目減りする。日銀利上げ→円高に注意。介入警戒ラインは160円。',
+    'S&P500':
+      '米国主要500社の株価指数。成長枠eMAXIS Slim S&P500ファンドの直接指標。',
+    'ナスダック':
+      '米国テクノロジー株中心の指数。S&P500と連動しやすく、外国株ファンド全般に影響する。',
+    '日経先物（CME）':
+      'シカゴ市場での日経平均先物。翌朝の日本株の方向感を示す参考指標。',
+    '日本長期金利':
+      '日銀利上げ→金利上昇→円高→外国株ファンドの円換算評価額が目減りするリスク。2.5%超で要注意。',
+    '米10年債利回り':
+      '米金利上昇→グロース株に逆風。S&P500・外国株ファンド全般の重しになる。4.5%超で警戒。',
+    'VIX（恐怖指数）':
+      '市場の不安度を示す指数。20以上で警戒・30超で危機的水準。高いほど株価が不安定。',
+    '日銀政策金利':
+      '利上げ決定→円高リスク。保有する外国株ファンド全般の円換算評価額に影響大。',
+    '非課税期限':
+      'この日を過ぎると特定口座に移管され、以降の値上がり分に約20.315%の税金がかかる。12月中旬までに売却すること。',
+    '含み益（非課税）':
+      '期限内に売却すれば利益に税金がかからない。売却代金は翌年の新NISA成長枠（240万）の原資となる。',
+    '米CPI':
+      '米国の消費者物価指数。前年比+2%がFRBの目標。これが高止まりすると利下げが遠のき、株式市場の重しになる。',
+    '米PCE':
+      'FRBが最も重視する物価指標。CPIより範囲が広く、金融政策の判断軸。コアPCE（食料・エネルギー除く）に注目。',
+    '米雇用統計':
+      '毎月第1金曜日に発表。非農業部門雇用者数と失業率が焦点。強すぎると利上げ圧力、弱すぎると景気後退懸念。',
+    'FOMC・日銀結果':
+      'FOMCは年8回開催。政策金利の据え置き・利上げ・利下げを決定。日銀会合は年8回。利上げ決定→円高→外国株ファンドの評価額に影響。',
+  };
+
+  function initTooltips() {
+    var selectors = ['.ind-name', '.pf-label'];
+    selectors.forEach(function(sel) {
+      document.querySelectorAll(sel).forEach(function(el) {
+        var text = el.textContent.trim();
+        if (!TIPS[text]) return;
+        if (el.querySelector('.tip-icon')) return;
+
+        var icon = document.createElement('span');
+        icon.className = 'tip-icon';
+        icon.textContent = '?';
+
+        var box = document.createElement('span');
+        box.className = 'tip-box';
+        box.textContent = TIPS[text];
+
+        var wrap = document.createElement('span');
+        wrap.className = 'tip-wrap';
+        wrap.appendChild(icon);
+        wrap.appendChild(box);
+        el.appendChild(wrap);
+
+        icon.addEventListener('mouseenter', function() {
+          adjustTipPosition(box, icon);
+        });
+        icon.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var isActive = icon.classList.contains('active');
+          document.querySelectorAll('.tip-icon.active').forEach(function(i) {
+            i.classList.remove('active');
+          });
+          if (!isActive) {
+            icon.classList.add('active');
+            adjustTipPosition(box, icon);
+          }
+        });
+      });
+    });
+
+    document.addEventListener('click', function() {
+      document.querySelectorAll('.tip-icon.active').forEach(function(i) {
+        i.classList.remove('active');
+      });
+    });
+  }
+
+  function adjustTipPosition(box, iconEl) {
+    var iconRect = iconEl.getBoundingClientRect();
+    var TIP_W = 250, GAP = 8, MARGIN = 8;
+    box.style.visibility = 'hidden';
+    box.style.display    = 'block';
+    var tipH = box.offsetHeight;
+    var left = iconRect.right + GAP;
+    var top  = iconRect.top + (iconRect.height - tipH) / 2;
+    if (left + TIP_W + MARGIN > window.innerWidth)  left = iconRect.left - TIP_W - GAP;
+    if (top + tipH + MARGIN > window.innerHeight)    top  = window.innerHeight - tipH - MARGIN;
+    if (top < MARGIN)  top  = MARGIN;
+    if (left < MARGIN) left = MARGIN;
+    box.style.left       = left + 'px';
+    box.style.top        = top  + 'px';
+    box.style.display    = '';
+    box.style.visibility = '';
+  }
+
+  // ── ポートフォリオ値をAPIから直接読み込んでdata-val要素に反映 ──
+  var VAL_MAP = {
+    'sp500_hyoka':           'mama_val_sp500_hyoka',
+    'sp500_son':             'mama_val_sp500_son',
+    'senshin_hyoka':         'mama_val_senshin_hyoka',
+    'nissei_hyoka':          'mama_val_nissei_hyoka',
+    'tokutei_total':         'mama_val_tokutei_total',
+    'tokutei_zei':           'mama_val_tokutei_zei',
+    'oldnisa_senshin_hyoka': 'mama_val_oldnisa_senshin_hyoka',
+    'oldnisa_senshin_son':   'mama_val_oldnisa_senshin_son',
+    'oldnisa_orcan_hyoka':   'mama_val_oldnisa_orcan_hyoka',
+    'oldnisa_orcan_son':     'mama_val_oldnisa_orcan_son',
+  };
+
+  async function loadPortfolioValues() {
+    try {
+      var memos = await fetch(MEMO_API).then(function(r) { return r.json(); });
+      Object.keys(VAL_MAP).forEach(function(dataVal) {
+        var memoKey = VAL_MAP[dataVal];
+        var el = document.querySelector('[data-val="' + dataVal + '"]');
+        if (el && memos[memoKey]) {
+          el.textContent = memos[memoKey];
+        }
+      });
+    } catch(e) {
+      console.warn('ポートフォリオ値の読み込みに失敗:', e);
+    }
+  }
+
+  // ── 初期化 ────────────────────────────────
+  function initPage() {
+    updateCountdowns();
+    renderMonthlyIndicators();
+    setInterval(updateCountdowns, 60000);
+
+    loadPortfolioValues();
+
+    loadMemosFromServer(function() {
+      initMemos();
+      initTooltips();
+      setInterval(refreshAllTimestamps, 60000);
+      // サーバー応答確認後に価格取得（---のまま残る問題を解消）
+      fetchAll();
+      setInterval(fetchAll, 5 * 60 * 1000);
+    });
+
+    document.getElementById('schedule-toggle-btn').addEventListener('click', function() {
+    var panel = document.getElementById('schedule-panel');
+    var btn   = this;
+    var isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open');
+    btn.textContent = isOpen ? '📊 移行スケジュールを見る' : '📊 移行スケジュールを隠す';
+  });
+  }
+
+  // DOMContentLoaded 保証（スクリプトが body 末尾にあっても安全）
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPage);
+  } else {
+    initPage();
+  }
+
+})();
+</script>
+
+</body>
+</html>
