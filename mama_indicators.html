@@ -1343,7 +1343,7 @@
         var res = await fetchWithTimeout(localUrl, 25000);
         if (res.ok) {
           var data = await res.json();
-          if (data.price !== undefined) return { price: data.price, open: data.open };
+          if (data.price !== undefined) return { price: data.price, open: data.open, date: data.date };
         }
       } catch(_) {}
       return null;
@@ -1383,12 +1383,17 @@
     return sign + (diff >= 0 ? '' : '-') + ds + ' (' + (diff >= 0 ? '+' : '') + pct.toFixed(2) + '%)';
   }
 
-  function renderValue(el, price, open, fmtFn) {
+  function renderValue(el, price, open, fmtFn, date) {
     var diff = price - open;
     var pct  = open !== 0 ? (diff / open) * 100 : 0;
     var dir  = diff > 0 ? 'up' : diff < 0 ? 'down' : '';
+    var priceText = fmtFn(price);
+    if (date) {
+      var dp = date.split('-');
+      priceText += '（' + parseInt(dp[1], 10) + '/' + parseInt(dp[2], 10) + '）';
+    }
     el.className = 'ind-value' + (dir ? ' ' + dir : '');
-    el.innerHTML = fmtFn(price) + '<span class="ind-change">' + fmtChg(diff, pct) + '</span>';
+    el.innerHTML = priceText + '<span class="ind-change">' + fmtChg(diff, pct) + '</span>';
   }
 
   var okCount = 0, doneCount = 0;
@@ -1412,7 +1417,7 @@
       fetchSymbol(cfg).then(function(r) {
         if (r) {
           if (cfg.alertKey) latestValues[cfg.alertKey] = r.price;
-          renderValue(el, r.price, r.open, cfg.fmt);
+          renderValue(el, r.price, r.open, cfg.fmt, r.date);
           okCount++;
         } else {
           el.textContent = cfg.fail || 'N/A';
@@ -1748,7 +1753,7 @@
     '日経先物（CME）':
       'シカゴ市場での日経平均先物。翌朝の日本株の方向感を示す参考指標。',
     '日本長期金利':
-      '日銀利上げ→金利上昇→円高→外国株ファンドの円換算評価額が目減りするリスク。2.5%超で要注意。',
+      '日銀利上げ→金利上昇→円高→外国株ファンドの円換算評価額が目減りするリスク。3%超で要注意。',
     '米10年債利回り':
       '米金利上昇→グロース株に逆風。S&P500・外国株ファンド全般の重しになる。4.5%超で警戒。',
     'VIX（恐怖指数）':
