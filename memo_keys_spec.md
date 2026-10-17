@@ -129,6 +129,23 @@ initPage()
 
 ---
 
+### 資産サマリー（CSV取込メタ・2026-10-17追加）
+
+ヘッダーの「総評価額」付近と特定口座カードに表示される、CSV取込日・前回比の管理キー。`renderAssetMeta()` が `loadMemosFromServer` のコールバック内で描画する（表示専用。カード上での直接編集は不可）。
+
+| キー | 用途 | 更新方法 | フォーマット |
+|---|---|---|---|
+| `mama_val_updated` | CSV取込日（表示用。ヘッダーに「CSV：10/17」のように表示。7日超でグレー＋⚠️） | CSV取込時に手動更新 | 文字列 `'YYYY-MM-DD'`（未設定なら「CSV：--」） |
+| `mama_total_prev` | 前回CSVの総評価額（`mama_total` との前回比の基準） | 更新時に旧 `mama_total` を退避 | 円・カンマ区切り文字列（初回は空） |
+| `mama_val_tokutei_total_prev` | 前回CSVの特定口座合計（`mama_val_tokutei_total` との前回比の基準） | 更新時に旧 `mama_val_tokutei_total` を退避 | 円・カンマ区切り文字列（初回は空） |
+| `mama_val_prev_date` | 前回CSVの取込日（前回比の「（前回 10/15）」表示に使用。両方の前回比で共通） | 更新時に旧 `mama_val_updated` を退避 | 文字列 `'YYYY-MM-DD'`（初回は空） |
+
+**前回比の運用（2本立てスナップショット・旦那用の `val_*_prev` と同じ考え方）：**
+CSV取込で新しい額に更新するときは、①現在キー（`mama_total`・`mama_val_tokutei_total`）の値を対応する `_prev` キーへ退避 → ②新しい額を現在キーへ書き込む → ③ `mama_val_updated` を当日日付に（このとき旧 `mama_val_updated` を `mama_val_prev_date` へ退避）。
+前回比の表示値は `¥`・`約`・カンマ等の記号を除いて数値化してから差分計算する（`parseYen()`）。旧NISA売却中は売却分が現金化されて評価額から外れるため、前回比がマイナスに見える場合がある旨をヘッダー直下に注記表示している（`.prev-note-bar`）。
+
+---
+
 ### 仕組みB：`memo-wrap[data-key]` 系（テキストメモ）
 
 `initMemos()` が処理。ユーザーが編集 → blur → `persistMemos()` が発火して全体上書き。
@@ -141,6 +158,19 @@ initPage()
 | `mama_monthly_pce` | 米PCE |
 | `mama_monthly_koyo` | 米雇用統計 |
 | `mama_monthly_fomc` | FOMC・日銀結果 |
+
+#### 次回発表予定（2026-10-17追加・旦那用 `renderMonthlyIndicators()` と同じ仕組み）
+
+「📅 次回発表予定」グリッド（`monthlyIndicators` 配列）はメモ管理下。配列の `nextDate` はメモ未設定時のフォールバック値としてのみ機能する。`renderMonthlyIndicators()` は `loadMemosFromServer` のコールバック内で再実行され、`memosCache` の値があればそちらを優先表示する。対応するタイムスタンプ（`memo_ts_<キー>`）の古さから `.monthly-item` に `fresh`/`recent`/`old` の枠線色が自動で付く（旦那用と同じ `ageClass()` 基準）。
+
+| 指標 | 実際のAPIキー | フォールバック値（2026-10-17時点シード） |
+|---|---|---|
+| 米雇用統計 | `mama_monthly_indicator_雇用統計` | `次回 11/6（10月分）` |
+| 米CPI | `mama_monthly_indicator_CPI` | `次回 11/10（10月分）` |
+| 米PCE | `mama_monthly_indicator_PCE` | `次回 10月末ごろ（9月分）` |
+| 米PPI | `mama_monthly_indicator_PPI` | `次回 11月中旬（10月分）` |
+
+> 対応するタイムスタンプキーは `mama_monthly_*` 系と同様 `memo_ts_<メモキー>` 形式（例：`memo_ts_mama_monthly_indicator_CPI`）。
 
 #### 銘柄カードメモ（5件）
 
@@ -181,6 +211,10 @@ initPage()
 | `memo_ts_mama_monthly_pce` | `mama_monthly_pce` |
 | `memo_ts_mama_monthly_koyo` | `mama_monthly_koyo` |
 | `memo_ts_mama_monthly_fomc` | `mama_monthly_fomc` |
+| `memo_ts_mama_monthly_indicator_雇用統計` | `mama_monthly_indicator_雇用統計` |
+| `memo_ts_mama_monthly_indicator_CPI` | `mama_monthly_indicator_CPI` |
+| `memo_ts_mama_monthly_indicator_PCE` | `mama_monthly_indicator_PCE` |
+| `memo_ts_mama_monthly_indicator_PPI` | `mama_monthly_indicator_PPI` |
 | `memo_ts_mama_sp500` | `mama_sp500` |
 | `memo_ts_mama_orcan_nisa` | `mama_orcan_nisa` |
 | `memo_ts_mama_tokutei` | `mama_tokutei` |
@@ -188,6 +222,23 @@ initPage()
 | `memo_ts_mama_oldnisa_orcan` | `mama_oldnisa_orcan` |
 | `memo_ts_mama_boj_rate` | `mama_boj_rate` |
 | `memo_ts_mama_total` | `mama_total` |
+| `memo_ts_mama_val_updated` | `mama_val_updated` |
+| `memo_ts_mama_total_prev` | `mama_total_prev` |
+| `memo_ts_mama_val_tokutei_total_prev` | `mama_val_tokutei_total_prev` |
+| `memo_ts_mama_val_prev_date` | `mama_val_prev_date` |
+
+> 下3つは資産サマリーのメタ情報キー。タイムスタンプ自体はUI表示に使用していないが、サーバー側自動タイムスタンプ（下記）の対象にはなる。
+
+---
+
+### サーバー側自動タイムスタンプ（2026-10-17実装）
+
+`server.py` の `_save_json()` が `.memos_mama.json`（`MEMOS_MAMA_FILE`）への書き込み時に `_auto_timestamp_memos()` を経由するようになった（旦那用 `MEMOS_FILE` と同じ関数を共用・プレフィックスのみ切り替え）。
+POSTされた `mama_*` キー（`memo_ts_*` 自身は対象外）の値が、保存済みの旧値と異なる場合、対応する `memo_ts_<キー>` を**サーバー側の現在時刻（UTC ISO8601）で強制上書き**する。
+
+- 旦那用との違い：旦那用はタイムスタンプキーが `memo_updated_` プレフィックス・対象キーが `memo_` プレフィックス。奥様用はタイムスタンプキーが `memo_ts_` プレフィックス・対象キーが `mama_` プレフィックス（本仕様書冒頭「タイムスタンプキーのプレフィックス」参照）。
+- **⚠️ ただしブラウザ側の上書き消滅リスク（本仕様書冒頭参照）は解消しない。** サーバーは「内容が変わったPOSTに対して正しい時刻を付与する」だけで、`persistMemos()` が古い `memosCache` ごとPOSTしてしまう問題自体への対策ではない。クロがAPI直叩きで更新する場合は、引き続き「POST後は必ず `location.reload()`」のルールを守ること。
+- 適用範囲：`MEMOS_MAMA_FILE`（奥様用ダッシュボード）のみ。`MEMOS_SHARED_FILE` は対象外。
 
 ---
 
@@ -300,6 +351,29 @@ location.reload();
 
 ---
 
+## カウントダウン優先度ルール（2026-10-17変更・旦那用に統一）
+
+`updateCountdowns()` が `#countdown-grid` に出すカードの優先度・件数ルール。旦那用 `investment_indicators.html` の実装に合わせた。
+
+| 残日数 | クラス（カード・cd-days共通） | 優先度バッジ | 表示スタイル |
+|---|---|---|---|
+| 1〜14日・当日 | `urgent` | `URGENT`（赤） | 赤強調 |
+| 15〜60日 | `soon` | `SOON`（オレンジ） | オレンジ |
+| 61日以上 | `future` | `FUTURE`（グレー） | 薄く表示 |
+| 経過後 | `done` | なし | グレー・小フォント |
+
+表示件数のルール（旦那用と同一）：
+
+| category | 表示件数 | 条件 |
+|---|---|---|
+| `task`（奥様のアクションが必要なもの） | 件数制限なし・常に表示 | ただし**90日以内**のイベントのみ |
+| `market`（定例の市場イベント） | 直近から最大4件 | 従来どおり |
+
+> 並び順は常に日付順。「📋 全予定を見る」ポップアップ（`openAllEventsModal()`）はこのルールの対象外で、件数制限なし・未来のイベント全件を表示する（変更なし）。
+> 優先度バッジは `.cd-priority-badge`（カード右上）・クラス名 `badge-urgent`/`badge-soon`/`badge-future`。既存の `.cd-badge-dyn`（イベント説明文）とは別物で、両方同時に表示される。
+
+---
+
 ## 変更履歴
 
 | 日付 | 変更内容 | APIキーへの影響 |
@@ -308,6 +382,7 @@ location.reload();
 | 2026-06-20 | 本仕様書を新規作成（2種類のメモ仕組みの明文化・上書き事故の記録） | — |
 | 2026-06-20 | `#boj-rate` のHTML初期値とJSフォールバック値を `⚠️ 要確認（クリックして更新）` に変更（古い数値固定化の防止・案C適用） | なし |
 | 2026-06-20 | `initWeeklyMemo()` と `initTotalBadge()` を削除し、`buildMemoWidget(container, key, opts)` に統合。`mama_boj_rate` → `data-inline` 属性付き `memo-wrap`、`mama_total` → `data-badge` 属性付き `memo-wrap`（ヘッダーバッジ内）に移行。Tab キーバグ・prompt() ダイアログ廃止 | なし |
+| 2026-10-17 | ①SYMBOLS `lv-jgb` の `yf: '^TNX'` フォールバックを削除（日本長期金利に米10年債の値が代用表示されるバグの修正）。stooq取得失敗時は「取得失敗」と表示し米国債で代用しない。②`countdownEvents` を全面更新（旧NISA先進国株式の3分割売却スケジュール・10月FOMC/日銀・米中間選挙・12月FOMC/SQ/日銀に差し替え）。③カウントダウン優先度ルールを旦那用に統一（14日/60日の閾値・`cd-priority-badge`・task90日以内無制限／market最大4件）。④「次回発表予定」（`monthlyIndicators`）をメモ管理下へ移行（旦那用 `renderMonthlyIndicators()` と同パターン）。⑤資産サマリーにCSV取込日・前回比表示を追加（`renderAssetMeta()`）。⑥`server.py` に奥様用の自動タイムスタンプ（`memo_ts_` プレフィックス）を追加。⑦奥様用カード内容を更新（旧NISA先進国株式カードの3分割売却状況・2026年スケジュール行・見込み金額への注記）。⑧評価額の初期値プレースホルダを全て `¥--` に変更（古い数値がメモ未読み込み時に本物に見えないよう対策） | **`mama_monthly_indicator_雇用統計`・`mama_monthly_indicator_CPI`・`mama_monthly_indicator_PCE`・`mama_monthly_indicator_PPI`・`mama_val_updated`・`mama_total_prev`・`mama_val_tokutei_total_prev`・`mama_val_prev_date` の8キーを新規追加** |
 
 ---
 

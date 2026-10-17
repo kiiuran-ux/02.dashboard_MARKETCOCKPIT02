@@ -409,6 +409,24 @@
     resize: none;
   }
 
+  /* CSV取込日・前回比 */
+  .csv-meta { display: flex; align-items: center; gap: 10px; }
+  .csv-date { font-family: var(--mono); font-size: 11px; color: var(--text2); }
+  .csv-date.old { color: var(--text3); }
+  .prev-chg { font-family: var(--mono); font-size: 11px; }
+  .prev-chg .chg-label { color: var(--text2); font-size: 10px; margin-right: 4px; }
+  .prev-chg.up   { color: var(--green); }
+  .prev-chg.down { color: var(--red); }
+  .prev-chg.flat { color: var(--text2); }
+  .prev-note-bar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 24px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
   /* 警告ストライプ（旧NISAデッドライン） */
   .deadline-stripe {
     background: repeating-linear-gradient(
@@ -627,6 +645,22 @@
   .countdown-card.task   .cd-badge-dyn { background: var(--purple-bg); color: var(--purple); border-color: rgba(188,140,255,0.3); }
   .countdown-card.market .cd-badge-dyn { background: var(--yellow-bg); color: var(--yellow); border-color: rgba(210,153,34,0.3); }
 
+  /* 残り日数の優先度（旦那用と同じクラス名・配色） */
+  .countdown-card.urgent { border-color: var(--red) !important; }
+  .countdown-card.soon   { border-color: var(--orange) !important; }
+  .countdown-card.future { border-color: var(--border) !important; opacity: 0.85; }
+  .countdown-card .cd-days.urgent { color: var(--red); }
+  .countdown-card .cd-days.soon   { color: var(--orange); }
+  .countdown-card .cd-days.done   { font-size: 20px; color: var(--text2); }
+  .cd-priority-badge {
+    position: absolute; top: 7px; right: 7px; font-size: 9px; padding: 1px 6px;
+    border-radius: 3px; font-family: var(--mono); font-weight: 700;
+    letter-spacing: 0.04em; pointer-events: none;
+  }
+  .badge-urgent { background: rgba(255,107,107,0.2); color: var(--red); }
+  .badge-soon   { background: rgba(240,136,62,0.2);  color: var(--orange); }
+  .badge-future { background: rgba(88,166,255,0.1);  color: var(--text2); }
+
   /* section-title-row */
   .section-title-row {
     display: flex; align-items: center; justify-content: space-between;
@@ -696,6 +730,9 @@
   }
   .monthly-item .mi-label { color: var(--text); font-weight: 500; margin-bottom: 4px; }
   .monthly-item .mi-date  { color: var(--text2); font-size: 11px; }
+  .monthly-item.fresh  { border-color: var(--green);  }
+  .monthly-item.recent { border-color: var(--yellow); }
+  .monthly-item.old    { border-color: var(--text3);  }
 </style>
 </head>
 <body>
@@ -714,6 +751,10 @@
   </div>
   <div class="header-right">
     <div class="last-updated" id="last-updated">Last updated: --</div>
+    <div class="csv-meta">
+      <span class="csv-date" id="csv-date">CSV：--</span>
+      <span class="prev-chg flat" id="total-chg"><span class="chg-label">前回比</span>—</span>
+    </div>
     <div class="total-badge" id="total-badge" title="クリックして編集">総評価額&nbsp;<div class="memo-wrap" data-key="mama_total" data-badge="1"></div></div>
   </div>
 </div>
@@ -722,6 +763,9 @@
 <div class="warning-banner" id="warning-banner">
   ⚠️ ドル円 160円突破 — 為替介入警戒！政府・日銀の動向に注意
 </div>
+
+<!-- 前回比の注記 -->
+<div class="prev-note-bar">※売却した分は現金になり評価額から外れるため、前回比がマイナスに見える場合があります（旧NISA先進国株式売却中）</div>
 
 <div class="container">
 
@@ -846,11 +890,11 @@
         </div>
         <div class="pf-row">
           <span class="pf-label">評価額</span>
-          <span class="pf-val neutral" data-val="sp500_hyoka">¥2,436,442</span>
+          <span class="pf-val neutral" data-val="sp500_hyoka">¥--</span>
         </div>
         <div class="pf-row">
           <span class="pf-label">評価損益</span>
-          <span class="pf-val positive" data-val="sp500_son">+¥36,442（+1.52%）</span>
+          <span class="pf-val positive" data-val="sp500_son">¥--</span>
         </div>
         <div class="pf-row">
           <span class="pf-label">購入日</span>
@@ -937,19 +981,23 @@
       <div class="card-body">
         <div class="pf-row">
           <span class="pf-label">先進国株式（残り）</span>
-          <span class="pf-val positive" data-val="senshin_hyoka">¥1,945,989（+¥1,048,798）</span>
+          <span class="pf-val positive" data-val="senshin_hyoka">¥--</span>
         </div>
         <div class="pf-row">
           <span class="pf-label">ニッセイ外国株式インデックスファンド</span>
-          <span class="pf-val positive" data-val="nissei_hyoka">¥4,391,269（+¥2,391,269）</span>
+          <span class="pf-val positive" data-val="nissei_hyoka">¥--</span>
         </div>
         <div class="pf-row">
           <span class="pf-label">特定口座合計</span>
-          <span class="pf-val positive" data-val="tokutei_total">¥6,337,258（+¥3,440,067）</span>
+          <span class="pf-val positive" data-val="tokutei_total">¥--</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-label">前回比</span>
+          <span class="prev-chg flat" id="tokutei-chg">—</span>
         </div>
         <div class="pf-row">
           <span class="pf-label">税負担見込み</span>
-          <span class="pf-val negative" data-val="tokutei_zei">約−¥699,000</span>
+          <span class="pf-val negative" data-val="tokutei_zei">¥--</span>
         </div>
         <div class="indicators-section">
           <div class="ind-label-sm">売却スケジュール</div>
@@ -985,20 +1033,20 @@
             <div class="card-account">旧NISA ／ 2022年購入 ／ 非課税期限：2026年末</div>
           </div>
         </div>
-        <span class="status-badge deadline">期限管理中</span>
+        <span class="status-badge deadline">売却中（残り1/3）</span>
       </div>
       <div class="card-body">
         <div class="pf-row">
           <span class="pf-label">取得金額</span>
-          <span class="pf-val neutral">¥1,200,000</span>
+          <span class="pf-val neutral">¥1,200,000（①②売却後の残り 約40万）</span>
         </div>
         <div class="pf-row">
           <span class="pf-label">評価額</span>
-          <span class="pf-val neutral" data-val="oldnisa_senshin_hyoka">¥2,635,525</span>
+          <span class="pf-val neutral" data-val="oldnisa_senshin_hyoka">¥--</span>
         </div>
         <div class="pf-row">
           <span class="pf-label">含み益（非課税）</span>
-          <span class="pf-val positive" data-val="oldnisa_senshin_son">+¥1,435,525（+119.6%）</span>
+          <span class="pf-val positive" data-val="oldnisa_senshin_son">¥--</span>
         </div>
         <div class="pf-row">
           <span class="pf-label">非課税期限</span>
@@ -1006,7 +1054,7 @@
         </div>
         <div class="pf-row">
           <span class="pf-label">売却予定</span>
-          <span class="pf-val neutral">2026年12月中旬</span>
+          <span class="pf-val neutral">3分割売却中：①②完了・③は12/8までに注文</span>
         </div>
         <div class="pf-row">
           <span class="pf-label">売却後の用途</span>
@@ -1041,11 +1089,11 @@
         </div>
         <div class="pf-row">
           <span class="pf-label">評価額</span>
-          <span class="pf-val neutral" data-val="oldnisa_orcan_hyoka">¥2,204,372</span>
+          <span class="pf-val neutral" data-val="oldnisa_orcan_hyoka">¥--</span>
         </div>
         <div class="pf-row">
           <span class="pf-label">含み益（非課税）</span>
-          <span class="pf-val positive" data-val="oldnisa_orcan_son">+¥1,004,372（+83.7%）</span>
+          <span class="pf-val positive" data-val="oldnisa_orcan_son">¥--</span>
         </div>
         <div class="pf-row">
           <span class="pf-label">非課税期限</span>
@@ -1090,6 +1138,7 @@
         <div class="source-card-detail">
           特定口座 手取り約566万<br>
           ＋ 旧NISA 487万（非課税）
+          <div class="sch-note" style="margin-top:4px;">※2026年6月時点の見込み</div>
         </div>
       </div>
       <div class="source-card blue">
@@ -1128,7 +1177,7 @@
             <td>2026年</td>
             <td>
               特定口座：バランス全額（174万）＋先進国一部（約83万）税引後約240万 <span class="sch-check">✅完了</span>
-              <div class="sch-note">12月：旧NISA先進国株式売却（265万〜・非課税）→2027年へ</div>
+              <div class="sch-note">10〜12月：旧NISA先進国株式を3分割で売却（①②完了）約268万（見込み）→2027年へ</div>
             </td>
             <td>月10万×7ヶ月＝<span class="sch-amount">70万円</span> <span class="sch-check">✅設定済</span></td>
             <td>
@@ -1198,12 +1247,12 @@
         <div class="completion-item">
           <div class="completion-item-label">旧NISA 先進国株式（2022年分）</div>
           <div class="completion-item-val positive">2026年12月売却 → 2027年新NISAへ</div>
-          <div class="sch-note" style="margin-top:4px;">評価265万〜（非課税）</div>
+          <div class="sch-note" style="margin-top:4px;">評価265万〜（非課税）※2026年6月時点の見込み</div>
         </div>
         <div class="completion-item">
           <div class="completion-item-label">旧NISA オルカン（2023年分）</div>
           <div class="completion-item-val positive">2027年12月売却 → 2028年新NISAへ</div>
-          <div class="sch-note" style="margin-top:4px;">評価222万〜（非課税）</div>
+          <div class="sch-note" style="margin-top:4px;">評価222万〜（非課税）※2026年6月時点の見込み</div>
         </div>
         <div class="completion-item">
           <div class="completion-item-label">特定口座</div>
@@ -1322,7 +1371,7 @@
     { id: 'lv-n225',   stooq: '^nkx',     yf: 'NIY=F',    local: true, fmt: function(v) { return v.toLocaleString('ja-JP', {maximumFractionDigits:0}); } },
     { id: 'lv-tnx',    stooq: 'tnx',      yf: '^TNX',     local: true, fmt: function(v) { return v.toFixed(3) + '%'; } },
     { id: 'lv-vix',    stooq: '^vix',     yf: '^VIX',     local: true, fmt: function(v) { return v.toFixed(2); } },
-    { id: 'lv-jgb',    stooq: '10yjpy.b', yf: '^TNX',     local: true, fmt: function(v) { return v.toFixed(3) + '%'; } },
+    { id: 'lv-jgb',    stooq: '10yjpy.b',                 local: true, fmt: function(v) { return v.toFixed(3) + '%'; }, fail: '取得失敗' },
   ];
 
   var latestValues = {};
@@ -1366,12 +1415,12 @@
           renderValue(el, r.price, r.open, cfg.fmt);
           okCount++;
         } else {
-          el.textContent = 'N/A';
+          el.textContent = cfg.fail || 'N/A';
           el.className = 'ind-value';
         }
         onDone();
       }).catch(function() {
-        el.textContent = 'N/A';
+        el.textContent = cfg.fail || 'N/A';
         el.className = 'ind-value';
         onDone();
       });
@@ -1393,22 +1442,23 @@
   // ── カウントダウン イベントマスタ ────────────
   var countdownEvents = [
     // 🟣 task（投資判断系）
-    { category: 'task', label: '旧NISA先進国株式 中間レビュー', date: '2026-09-15', badge: '騰落進行度を確認' },
-    { category: 'task', label: '旧NISA先進国株式 売却期限',     date: '2026-12-15', badge: '12月中旬に売却' },
-    { category: 'task', label: '旧NISAオルカン 中間レビュー',   date: '2027-09-15', badge: '騰落進行度を確認' },
-    { category: 'task', label: '旧NISAオルカン 売却期限',       date: '2027-12-15', badge: '2027年12月に売却' },
-    // 🟡 market（直近FOMC・日銀のみ＋SQ）
-    { category: 'market', label: '日銀金融政策決定会合', date: '2026-06-15', badge: '1.0%利上げ濃厚' },
-    { category: 'market', label: 'FOMC',               date: '2026-06-16', badge: '利下げ確定視' },
-    { category: 'market', label: '9月 先物SQ',          date: '2026-09-11', badge: '第2金曜' },
-    { category: 'market', label: '12月 先物SQ',         date: '2026-12-11', badge: '第2金曜' },
+    { category: 'task',   label: '旧NISA先進国株式 ③売却の注文期限', date: '2026-12-08', badge: '最後の1/3（195,829口）' },
+    { category: 'task',   label: '旧NISAオルカン 中間レビュー',      date: '2027-09-15', badge: '円高進行度で判断' },
+    { category: 'task',   label: '旧NISAオルカン 売却期限',          date: '2027-12-15', badge: '非課税期限' },
+    // 🟡 market（定例の市場イベント）
+    { category: 'market', label: 'FOMC結果公表（日本時間）',         date: '2026-10-29', badge: '' },
+    { category: 'market', label: '日銀会合結果・総裁会見',           date: '2026-10-30', badge: '展望レポート' },
+    { category: 'market', label: '米中間選挙',                       date: '2026-11-03', badge: '' },
+    { category: 'market', label: 'FOMC結果公表（日本時間）',         date: '2026-12-10', badge: '利上げ本命' },
+    { category: 'market', label: '12月 先物SQ',                      date: '2026-12-11', badge: '第2金曜' },
+    { category: 'market', label: '日銀会合結果・総裁会見',           date: '2026-12-18', badge: '利上げ本命' },
   ];
 
   var monthlyIndicators = [
-    { label: '米雇用統計', nextDate: '次回7月第1金曜' },
-    { label: '米CPI',     nextDate: '次回7月中旬' },
-    { label: '米PCE',     nextDate: '次回6月下旬' },
-    { label: '米PPI',     nextDate: '次回7月中旬' },
+    { label: '米雇用統計', nextDate: '次回 11/6（10月分）',     memoKey: 'mama_monthly_indicator_雇用統計' },
+    { label: '米CPI',     nextDate: '次回 11/10（10月分）',    memoKey: 'mama_monthly_indicator_CPI' },
+    { label: '米PCE',     nextDate: '次回 10月末ごろ（9月分）', memoKey: 'mama_monthly_indicator_PCE' },
+    { label: '米PPI',     nextDate: '次回 11月中旬（10月分）', memoKey: 'mama_monthly_indicator_PPI' },
   ];
 
   function calcDays(targetDateStr) {
@@ -1441,38 +1491,59 @@
 
     var visible = withDays.filter(function(x) { return x.days >= -1; });
 
-    var taskSorted = visible.filter(function(x) { return x.ev.category === 'task'; })
-      .sort(function(a, b) { return a.days - b.days; });
-    var nearestTask = taskSorted[0] || null;
-
-    var marketSorted = visible.filter(function(x) { return x.ev.category === 'market'; })
+    // task（旦那のアクションが必要なもの）：90日以内は件数制限なく常に表示
+    var taskVisible = visible
+      .filter(function(x) { return x.ev.category === 'task' && x.days <= 90; })
       .sort(function(a, b) { return a.days - b.days; });
 
-    var result = nearestTask ? [nearestTask] : [];
-    result = result.concat(marketSorted).slice(0, 4);
+    // market：直近から最大4件
+    var marketSorted = visible
+      .filter(function(x) { return x.ev.category === 'market'; })
+      .sort(function(a, b) { return a.days - b.days; })
+      .slice(0, 4);
 
-    if (result.length < 4) {
-      var used = {};
-      result.forEach(function(x) { used[x.ev.date + x.ev.label] = true; });
-      taskSorted.forEach(function(x) {
-        if (result.length >= 4) return;
-        if (!used[x.ev.date + x.ev.label]) result.push(x);
-      });
-    }
+    var result = taskVisible.concat(marketSorted);
 
+    // 最終的に日付順で表示
     result.sort(function(a, b) { return a.days - b.days; });
 
     grid.innerHTML = result.map(function(x) {
       var ev = x.ev, days = x.days;
       var dateStr = x.d.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
-      var daysClass, unitText, cardColor;
-      if (days > 7)       { daysClass = 'cd-days yellow'; unitText = '日後'; cardColor = ''; }
-      else if (days > 0)  { daysClass = 'cd-days orange'; unitText = '日後'; cardColor = ' urgent'; }
-      else if (days === 0){ daysClass = 'cd-days red';    unitText = '本日開催'; cardColor = ' urgent'; }
-      else                { daysClass = 'cd-days orange'; unitText = '経過中'; cardColor = ''; }
+      var daysClass, unitText, cardExtra, priorityLevel;
+      if (days > 0) {
+        if (days <= 14) {
+          daysClass = 'cd-days urgent';
+          cardExtra = ' urgent';
+          priorityLevel = 'urgent';
+        } else if (days <= 60) {
+          daysClass = 'cd-days soon';
+          cardExtra = ' soon';
+          priorityLevel = 'soon';
+        } else {
+          daysClass = 'cd-days';
+          cardExtra = ' future';
+          priorityLevel = 'future';
+        }
+        unitText = '日後';
+      } else if (days === 0) {
+        daysClass = 'cd-days urgent';
+        unitText  = '本日開催';
+        cardExtra = ' urgent';
+        priorityLevel = 'urgent';
+      } else {
+        daysClass = 'cd-days done';
+        unitText  = '経過中';
+        cardExtra = ' done';
+        priorityLevel = '';
+      }
       var daysText = days > 0 ? String(days) : days === 0 ? '0' : '経過';
       var badgeHtml = ev.badge ? '<div class="cd-badge-dyn">' + ev.badge + '</div>' : '';
-      return '<div class="countdown-card ' + ev.category + cardColor + '">'
+      var priorityBadge = priorityLevel
+        ? '<div class="cd-priority-badge badge-' + priorityLevel + '">' + priorityLevel.toUpperCase() + '</div>'
+        : '';
+      return '<div class="countdown-card ' + ev.category + cardExtra + '">'
+           + priorityBadge
            + '<div class="cd-event">' + getEmojiMama(ev.label) + ' ' + ev.label + '</div>'
            + '<div class="' + daysClass + '">' + daysText + '</div>'
            + '<div class="cd-date">' + dateStr + '</div>'
@@ -1485,9 +1556,13 @@
     var grid = document.getElementById('monthly-grid');
     if (!grid) return;
     grid.innerHTML = monthlyIndicators.map(function(item) {
-      return '<div class="monthly-item">'
+      var txt = memosCache[item.memoKey];
+      if (txt === undefined || txt === '') txt = item.nextDate;
+      var iso = memosCache[tsKey(item.memoKey)];
+      var cls = iso ? ageClass(iso) : 'old';
+      return '<div class="monthly-item ' + cls + '">'
            + '<div class="mi-label">' + item.label + '</div>'
-           + '<div class="mi-date">' + item.nextDate + '</div>'
+           + '<div class="mi-date">' + txt + '</div>'
            + '</div>';
     }).join('');
   }
@@ -1787,6 +1862,56 @@
     }
   }
 
+  // ── 評価額の更新日・前回比（CSV取込メタ） ──
+  function parseYen(v) {
+    if (v === undefined || v === null || v === '') return null;
+    var n = parseFloat(String(v).replace(/[^\d.-]/g, ''));
+    return isNaN(n) ? null : n;
+  }
+
+  function fmtMD(dateStr) {
+    var parts = String(dateStr).split('-');
+    if (parts.length !== 3) return dateStr;
+    return parseInt(parts[1], 10) + '/' + parseInt(parts[2], 10);
+  }
+
+  function setPrevChg(elId, curRaw, prevRaw, prevDateRaw, withLabel) {
+    var el = document.getElementById(elId);
+    if (!el) return;
+    var cur  = parseYen(curRaw);
+    var prev = parseYen(prevRaw);
+    var label = withLabel ? '<span class="chg-label">前回比</span>' : '';
+    if (cur === null || prev === null) {
+      el.className = 'prev-chg flat';
+      el.innerHTML = label + '—';
+      return;
+    }
+    var diff = cur - prev;
+    var dir  = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+    var sign = diff > 0 ? '+' : diff < 0 ? '▲' : '±';
+    var dateTxt = prevDateRaw ? '（前回 ' + fmtMD(prevDateRaw) + '）' : '';
+    el.className = 'prev-chg ' + dir;
+    el.innerHTML = label + sign + Math.abs(diff).toLocaleString('ja-JP') + '円' + dateTxt;
+  }
+
+  function renderAssetMeta() {
+    var csvEl = document.getElementById('csv-date');
+    if (csvEl) {
+      var updated = memosCache['mama_val_updated'];
+      if (updated) {
+        var old = ageClass(updated + 'T00:00:00+09:00') === 'old';
+        csvEl.className = 'csv-date' + (old ? ' old' : '');
+        csvEl.textContent = (old ? '⚠️ ' : '') + 'CSV：' + fmtMD(updated);
+      } else {
+        csvEl.className = 'csv-date';
+        csvEl.textContent = 'CSV：--';
+      }
+    }
+    var prevDate = memosCache['mama_val_prev_date'];
+    setPrevChg('total-chg',   memosCache['mama_total'],             memosCache['mama_total_prev'],             prevDate, true);
+    setPrevChg('tokutei-chg', memosCache['mama_val_tokutei_total'], memosCache['mama_val_tokutei_total_prev'], prevDate, false);
+  }
+
   // ── 初期化 ────────────────────────────────
   function initPage() {
     updateCountdowns();
@@ -1797,6 +1922,8 @@
 
     loadMemosFromServer(function() {
       initMemos();
+      renderMonthlyIndicators();
+      renderAssetMeta();
       initTooltips();
       setInterval(refreshAllTimestamps, 60000);
       // サーバー応答確認後に価格取得（---のまま残る問題を解消）
